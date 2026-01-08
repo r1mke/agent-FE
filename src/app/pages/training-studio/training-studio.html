@@ -1,0 +1,81 @@
+<div class="max-w-4xl mx-auto text-center">
+
+  <div class="mb-8 flex justify-between items-center">
+    <div class="text-left">
+      <h1 class="text-3xl font-bold text-dark-grey">Trening Studio</h1>
+      <p class="text-gray-500">Pomozi Polenko Agentu da uči</p>
+    </div>
+    <div class="bg-white px-4 py-2 rounded-lg shadow border border-gray-200">
+      <span class="text-gray-500 text-sm block">Na čekanju</span>
+      <span class="text-2xl font-bold text-honey">{{ remainingCount }}</span>
+    </div>
+  </div>
+
+  <div *ngIf="currentSample; else emptyState" class="bg-white p-2 rounded-2xl shadow-xl border-4 border-gray-100 relative">
+    
+    <div class="absolute top-6 left-6 z-10">
+      <div class="bg-dark-grey/90 text-white px-4 py-2 rounded-full shadow backdrop-blur-sm border border-gray-600">
+        <span class="text-xs text-gray-300 block uppercase">AI Misli:</span>
+        <div class="font-bold text-lg flex items-center gap-2">
+          <span [class.text-honey]="currentSample.prediction?.predictedLabel === 'Pollen'"
+                [class.text-gray-400]="currentSample.prediction?.predictedLabel === 'NoPollen'">
+            {{ currentSample.prediction?.predictedLabel || '???' }}
+          </span>
+          <span class="text-sm bg-gray-700 px-2 py-0.5 rounded">
+            {{ (currentSample.prediction?.score || 0) * 100 | number:'1.0-0' }}%
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="relative h-[500px] bg-black rounded-xl overflow-hidden group">
+      <img [src]="getImageUrl(currentSample?.imagePath)" 
+     class="w-full h-full object-contain transition-transform duration-300 group-hover:scale-125 cursor-zoom-in">
+      
+      <div class="absolute bottom-4 left-0 right-0 text-white/50 text-sm">
+        Koristi strelice na tastaturi: ⬅️ NE &nbsp; | &nbsp; ➡️ DA
+      </div>
+    </div>
+
+    <div class="flex justify-center gap-8 mt-6 mb-4">
+      
+      <button (click)="submitReview(false)" 
+              class="group flex flex-col items-center gap-2 transition-transform active:scale-95">
+        <div class="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center border-4 border-transparent group-hover:border-red-400 group-hover:bg-red-50 transition-colors">
+          <i class="fa-solid fa-xmark fa-2x text-gray-400 group-hover:text-red-500"></i>
+        </div>
+        <span class="font-bold text-gray-500 group-hover:text-red-500">NEMA Polena</span>
+        <kbd class="text-xs bg-gray-200 px-2 rounded text-gray-500">⬅️ Lijevo</kbd>
+      </button>
+
+      <button (click)="submitReview(true)" 
+              class="group flex flex-col items-center gap-2 transition-transform active:scale-95">
+        <div class="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center border-4 border-transparent group-hover:border-green-400 group-hover:bg-green-50 transition-colors">
+          <i class="fa-solid fa-check fa-2x text-gray-400 group-hover:text-green-500"></i>
+        </div>
+        <span class="font-bold text-gray-500 group-hover:text-green-500">IMA Polena</span>
+        <kbd class="text-xs bg-gray-200 px-2 rounded text-gray-500">Desno ➡️</kbd>
+      </button>
+
+    </div>
+
+  </div>
+
+  <ng-template #emptyState>
+    <div class="py-20 bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200">
+      <div *ngIf="loading">
+        <i class="fa-solid fa-spinner fa-spin fa-3x text-honey mb-4"></i>
+        <p>Tražim nove slike...</p>
+      </div>
+      <div *ngIf="!loading">
+        <div class="bg-green-100 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 text-green-500">
+          <i class="fa-solid fa-flag-checkered fa-3x"></i>
+        </div>
+        <h2 class="text-2xl font-bold text-dark-grey mb-2">Sve pregledano!</h2>
+        <p class="text-gray-500 mb-6">Nema novih slika za review. Polenko ti se zahvaljuje. 🐝</p>
+        <a routerLink="/" class="text-honey font-bold hover:underline">Nazad na Dashboard</a>
+      </div>
+    </div>
+  </ng-template>
+
+</div>
