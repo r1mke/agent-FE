@@ -1,20 +1,26 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common'; // Važno za *ngIf i *ngFor
+import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { ApiService } from '../../services/api.service';
-import { ImageSample } from '../../models/api-models';
 import { ToastrService } from 'ngx-toastr';
+
 @Component({
   selector: 'app-dashboard',
-  imports: [CommonModule],
+  imports: [CommonModule, RouterLink],
   standalone: true,
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css',
 })
 export class Dashboard implements OnInit {
   
-  recentSamples: ImageSample[] = [];
   isDragging = false;
   uploading = false;
+  
+  uploadStats: {
+    todayUploads: number;
+    pendingReview: number;
+    reviewed: number;
+  } | null = null;
 
   constructor(
     private api: ApiService,
@@ -22,17 +28,16 @@ export class Dashboard implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.loadResults();
+    this.loadStats();
   }
 
-  loadResults() {
-    this.api.getResults().subscribe({
+  loadStats() {
+    this.api.getUploadStats().subscribe({
       next: (data) => {
-        this.recentSamples = data;
+        this.uploadStats = data;
       },
       error: (err) => {
         console.error(err);
-        this.toastr.error('Ne mogu učitati rezultate.', 'Greška');
       }
     });
   }
@@ -73,18 +78,16 @@ export class Dashboard implements OnInit {
     this.uploading = true;
     let completed = 0;
 
-    // Uploadaj svaku sliku pojedinačno
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-      // Default task je 'Scoring' (analiza), ne trening
-      this.api.upload(file, 'Scoring').subscribe({
+      this.api.upload(file, 1).subscribe({
         next: () => {
           completed++;
           if (completed === files.length) {
             this.toastr.success(`Uspješno učitano ${files.length} slika!`, 'Polenko');
             this.uploading = false;
-            // Osvježi listu nakon kratke pauze (dok backend obradi)
-            setTimeout(() => this.loadResults(), 1000); 
+            // Osvježi statistiku
+            setTimeout(() => this.loadStats(), 1500); 
           }
         },
         error: () => {
@@ -94,24 +97,4 @@ export class Dashboard implements OnInit {
       });
     }
   }
-
-  // Pomoćna funkcija za boju okvira
-  getBorderColor(prediction: any): string {
-    if (!prediction) return 'border-gray-300';
-    if (prediction.predictedLabel === 'Pollen') return 'border-honey'; // Žuta za polen
-    return 'border-gray-400'; // Siva za NoPollen
-  }
-
-  // Dodaj ovu metodu na dno klase, prije zatvaranja }
-getImageUrl(fullPath: string): string {
-  if (!fullPath) return 'assets/bee-placeholder.png';
-  
-  // Izvuci samo ime fajla iz pune putanje
-  // Ovo radi i za Windows (\) i za Linux (/) putanje
-  const filename = fullPath.split(/[\\/]/).pop();
-  
-  // Vrati URL koji backend servira
-  // PAZI: Port mora biti isti kao u ApiService (7152 ili koji već koristiš)
-  return `http://localhost:5036/images/${filename}`;
-}
 }

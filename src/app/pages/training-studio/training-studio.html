@@ -29,7 +29,7 @@
     </div>
 
     <div class="relative h-[500px] bg-black rounded-xl overflow-hidden group">
-      <img [src]="getImageUrl(currentSample?.imagePath)" 
+      <img [src]="getImageUrl(currentSample?.imagePath || '')" 
      class="w-full h-full object-contain transition-transform duration-300 group-hover:scale-125 cursor-zoom-in">
       
       <div class="absolute bottom-4 left-0 right-0 text-white/50 text-sm">

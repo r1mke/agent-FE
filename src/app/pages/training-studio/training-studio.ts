@@ -84,9 +84,19 @@ export class TrainingStudio implements OnInit {
     }
   }
 
-  getImageUrl(fullPath: string | undefined): string {
+  getImageUrl(fullPath: string): string {
   if (!fullPath) return 'assets/bee-placeholder.png';
+  
   const filename = fullPath.split(/[\\/]/).pop();
+  
+  // Provjeri da li je iz UserUploads ili Datasets
+  if (fullPath.includes('UserUploads')) {
+    return `http://localhost:5036/images/${filename}`;
+  } else if (fullPath.includes('bee_imgs')) {
+    return `http://localhost:5036/dataset/${filename}`;
+  }
+  
+  // Fallback - probaj images
   return `http://localhost:5036/images/${filename}`;
 }
 }
