@@ -25,6 +25,11 @@ export class ApiService {
     return this.http.get<ImageSample[]>(`${this.baseUrl}/Samples/results`);
   }
 
+  // NOVO: Dohvati rezultate za specifične ID-eve
+  getResultsByIds(ids: string[]): Observable<any[]> {
+    return this.http.post<any[]>(`${this.baseUrl}/Samples/results-by-ids`, { ids });
+  }
+
   getUploadStats(): Observable<{ todayUploads: number, pendingReview: number, reviewed: number }> {
     return this.http.get<{ todayUploads: number, pendingReview: number, reviewed: number }>(`${this.baseUrl}/Samples/stats`);
   }

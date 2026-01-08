@@ -1,8 +1,16 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../../services/api.service';
 import { ToastrService } from 'ngx-toastr';
+
+interface AnalysisResult {
+  id: string;
+  imageUrl: string;
+  score: number;
+  label: string;
+  decision: string;
+}
 
 @Component({
   selector: 'app-dashboard',
@@ -11,7 +19,7 @@ import { ToastrService } from 'ngx-toastr';
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css',
 })
-export class Dashboard implements OnInit {
+export class Dashboard implements OnInit, OnDestroy {
   
   isDragging = false;
   uploading = false;
@@ -22,6 +30,14 @@ export class Dashboard implements OnInit {
     reviewed: number;
   } | null = null;
 
+  // Rezultati analize nakon uploada
+  analysisResults: AnalysisResult[] = [];
+  hasPendingReviews = false;
+
+  // Za polling
+  private pendingIds: string[] = [];
+  private pollingInterval: any;
+
   constructor(
     private api: ApiService,
     private toastr: ToastrService
@@ -29,6 +45,10 @@ export class Dashboard implements OnInit {
 
   ngOnInit(): void {
     this.loadStats();
+  }
+
+  ngOnDestroy(): void {
+    this.stopPolling();
   }
 
   loadStats() {
@@ -76,18 +96,24 @@ export class Dashboard implements OnInit {
     if (files.length === 0) return;
     
     this.uploading = true;
+    this.pendingIds = [];
+    this.analysisResults = [];
     let completed = 0;
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       this.api.upload(file, 1).subscribe({
-        next: () => {
+        next: (response) => {
+          // Spremi ID za polling
+          this.pendingIds.push(response.sampleId);
+          
           completed++;
           if (completed === files.length) {
-            this.toastr.success(`Uspješno učitano ${files.length} slika!`, 'Polenko');
+            this.toastr.success(`Uploadovano ${files.length} slika - čekam analizu...`, 'Polenko');
             this.uploading = false;
-            // Osvježi statistiku
-            setTimeout(() => this.loadStats(), 1500); 
+            
+            // Pokreni polling za rezultate
+            this.startPolling();
           }
         },
         error: () => {
@@ -96,5 +122,72 @@ export class Dashboard implements OnInit {
         }
       });
     }
+  }
+
+  // Polling - provjerava status uploadovanih slika
+  startPolling() {
+    let attempts = 0;
+    const maxAttempts = 30; // Max 30 sekundi čekanja
+
+    this.pollingInterval = setInterval(() => {
+      attempts++;
+
+      this.api.getResultsByIds(this.pendingIds).subscribe({
+        next: (results) => {
+          // Filtriraj samo one koje su završene (nisu Queued/Processing)
+          const finished = results.filter((r: any) => 
+            r.status !== 0 && r.status !== 1 // 0=Queued, 1=Processing
+          );
+
+          // Ažuriraj rezultate
+          this.analysisResults = finished.map((r: any) => ({
+            id: r.id,
+            imageUrl: this.getImageUrl(r.imagePath),
+            score: r.predictions?.[0]?.score || 0,
+            label: r.predictions?.[0]?.predictedLabel || 'Unknown',
+            decision: r.predictions?.[0]?.decision || 'Unknown'
+          }));
+
+          // Provjeri da li ima pending reviews
+          this.hasPendingReviews = this.analysisResults.some(r => r.decision === 'PendingReview');
+
+          // Ako su sve završene, zaustavi polling
+          if (finished.length === this.pendingIds.length) {
+            this.stopPolling();
+            this.loadStats(); // Osvježi statistiku
+            
+            if (this.hasPendingReviews) {
+              this.toastr.warning('Neke slike trebaju tvoj review!', 'Pažnja');
+            } else {
+              this.toastr.success('Sve slike uspješno analizirane!', 'Gotovo');
+            }
+          }
+
+          // Timeout zaštita
+          if (attempts >= maxAttempts) {
+            this.stopPolling();
+            this.toastr.info('Analiza još traje u pozadini...', 'Info');
+          }
+        }
+      });
+    }, 1000); // Provjeri svake sekunde
+  }
+
+  stopPolling() {
+    if (this.pollingInterval) {
+      clearInterval(this.pollingInterval);
+      this.pollingInterval = null;
+    }
+  }
+
+  clearResults() {
+    this.analysisResults = [];
+    this.hasPendingReviews = false;
+  }
+
+  getImageUrl(fullPath: string): string {
+    if (!fullPath) return 'assets/bee-placeholder.png';
+    const filename = fullPath.split(/[\\/]/).pop();
+    return `http://localhost:5036/images/${filename}`;
   }
 }

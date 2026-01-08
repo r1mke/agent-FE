@@ -34,7 +34,91 @@
     </div>
   </div>
 
-  <!-- STATISTIKA UMJESTO SLIKA -->
+  <!-- REZULTATI ANALIZE (nakon uploada) -->
+  <div *ngIf="analysisResults.length > 0" class="space-y-4">
+    <h2 class="text-xl font-bold text-dark-grey border-l-4 border-honey pl-3">
+      Rezultati Analize
+    </h2>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div *ngFor="let result of analysisResults" 
+           class="bg-white rounded-xl shadow-sm border-2 overflow-hidden"
+           [ngClass]="{
+             'border-green-400': result.decision === 'AutoAccept',
+             'border-red-400': result.decision === 'AutoReject',
+             'border-yellow-400': result.decision === 'PendingReview'
+           }">
+        
+        <!-- Slika -->
+        <div class="h-40 bg-gray-100 relative">
+          <img [src]="result.imageUrl" class="w-full h-full object-cover">
+          
+          <!-- Badge -->
+          <div class="absolute top-2 right-2">
+            <span *ngIf="result.decision === 'AutoAccept'" 
+                  class="bg-green-500 text-white text-xs font-bold px-2 py-1 rounded shadow">
+              ✓ POLEN
+            </span>
+            <span *ngIf="result.decision === 'AutoReject'" 
+                  class="bg-gray-600 text-white text-xs font-bold px-2 py-1 rounded shadow">
+              ✗ BEZ POLENA
+            </span>
+            <span *ngIf="result.decision === 'PendingReview'" 
+                  class="bg-yellow-500 text-white text-xs font-bold px-2 py-1 rounded shadow">
+              ? NESIGURAN
+            </span>
+          </div>
+        </div>
+
+        <!-- Info -->
+        <div class="p-4">
+          <div class="flex justify-between items-center mb-2">
+            <span class="text-sm text-gray-500">Pouzdanost:</span>
+            <span class="text-lg font-bold" 
+                  [ngClass]="{
+                    'text-green-600': result.score >= 0.9,
+                    'text-red-600': result.score <= 0.15,
+                    'text-yellow-600': result.score > 0.15 && result.score < 0.9
+                  }">
+              {{ result.score * 100 | number:'1.0-0' }}%
+            </span>
+          </div>
+          
+          <div class="text-sm">
+            <span *ngIf="result.decision === 'AutoAccept'" class="text-green-600">
+              <i class="fa-solid fa-check-circle mr-1"></i> Agent je siguran - automatski prihvaćeno
+            </span>
+            <span *ngIf="result.decision === 'AutoReject'" class="text-gray-600">
+              <i class="fa-solid fa-check-circle mr-1"></i> Agent je siguran - automatski odbijeno
+            </span>
+            <span *ngIf="result.decision === 'PendingReview'" class="text-yellow-600">
+              <i class="fa-solid fa-question-circle mr-1"></i> Agent nije siguran - čeka tvoj review
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Link na Training Studio ako ima nesigurnih -->
+    <div *ngIf="hasPendingReviews" 
+         class="bg-yellow-50 border-2 border-yellow-300 rounded-xl p-6 text-center">
+      <i class="fa-solid fa-triangle-exclamation fa-2x text-yellow-500 mb-3"></i>
+      <h3 class="text-lg font-bold text-dark-grey mb-2">Agent treba tvoju pomoć!</h3>
+      <p class="text-gray-600 mb-4">Neke slike su nejasne i agent nije siguran. Pomozi mu da nauči.</p>
+      <a routerLink="/training" 
+         class="inline-block bg-honey text-white px-6 py-3 rounded-lg font-bold hover:bg-yellow-600 transition">
+        <i class="fa-solid fa-graduation-cap mr-2"></i>
+        Idi na Training Studio
+      </a>
+    </div>
+
+    <!-- Dugme za clear -->
+    <button (click)="clearResults()" class="text-gray-400 hover:text-gray-600 text-sm">
+      <i class="fa-solid fa-times mr-1"></i> Očisti rezultate
+    </button>
+  </div>
+
+  <!-- STATISTIKA -->
   <div *ngIf="uploadStats" class="grid grid-cols-1 md:grid-cols-3 gap-6">
     
     <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 text-center">
