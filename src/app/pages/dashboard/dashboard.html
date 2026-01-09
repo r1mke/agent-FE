@@ -7,7 +7,6 @@
     </div>
   </div>
 
-  <!-- UPLOAD ZONA -->
   <div 
     class="border-4 border-dashed rounded-2xl p-12 text-center transition-all duration-300 cursor-pointer group relative overflow-hidden"
     [class.border-honey]="isDragging"
@@ -34,7 +33,6 @@
     </div>
   </div>
 
-  <!-- REZULTATI ANALIZE (nakon uploada) -->
   <div *ngIf="analysisResults.length > 0" class="space-y-4">
     <h2 class="text-xl font-bold text-dark-grey border-l-4 border-honey pl-3">
       Rezultati Analize
@@ -44,62 +42,99 @@
       <div *ngFor="let result of analysisResults" 
            class="bg-white rounded-xl shadow-sm border-2 overflow-hidden"
            [ngClass]="{
-             'border-green-400': result.decision === 'AutoAccept',
+             'border-green-400': result.decision === 'AutoAccept' || result.decision === 'Reviewed',
              'border-red-400': result.decision === 'AutoReject',
              'border-yellow-400': result.decision === 'PendingReview'
            }">
         
-        <!-- Slika -->
         <div class="h-40 bg-gray-100 relative">
           <img [src]="result.imageUrl" class="w-full h-full object-cover">
           
-          <!-- Badge -->
           <div class="absolute top-2 right-2">
             <span *ngIf="result.decision === 'AutoAccept'" 
                   class="bg-green-500 text-white text-xs font-bold px-2 py-1 rounded shadow">
-              ✓ POLEN
+              ✓ GOTOVO
             </span>
             <span *ngIf="result.decision === 'AutoReject'" 
-                  class="bg-gray-600 text-white text-xs font-bold px-2 py-1 rounded shadow">
-              ✗ BEZ POLENA
+                  class="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded shadow">
+              ✗ GOTOVO
             </span>
             <span *ngIf="result.decision === 'PendingReview'" 
                   class="bg-yellow-500 text-white text-xs font-bold px-2 py-1 rounded shadow">
               ? NESIGURAN
             </span>
+            <span *ngIf="result.decision === 'Reviewed'" 
+                  class="bg-blue-500 text-white text-xs font-bold px-2 py-1 rounded shadow">
+              ✎ PREGLEDANO
+            </span>
           </div>
         </div>
 
-        <!-- Info -->
         <div class="p-4">
           <div class="flex justify-between items-center mb-2">
             <span class="text-sm text-gray-500">Pouzdanost:</span>
             <span class="text-lg font-bold" 
                   [ngClass]="{
-                    'text-green-600': result.score >= 0.9,
-                    'text-red-600': result.score <= 0.15,
-                    'text-yellow-600': result.score > 0.15 && result.score < 0.9
+                    'text-green-600': result.score >= 0.8 && result.label === 'Pollen',
+                    'text-red-600': result.score >= 0.8 && result.label !== 'Pollen',
+                    'text-yellow-600': result.score < 0.8
                   }">
               {{ result.score * 100 | number:'1.0-0' }}%
             </span>
           </div>
           
-          <div class="text-sm">
-            <span *ngIf="result.decision === 'AutoAccept'" class="text-green-600">
-              <i class="fa-solid fa-check-circle mr-1"></i> Agent je siguran - automatski prihvaćeno
-            </span>
-            <span *ngIf="result.decision === 'AutoReject'" class="text-gray-600">
-              <i class="fa-solid fa-check-circle mr-1"></i> Agent je siguran - automatski odbijeno
-            </span>
-            <span *ngIf="result.decision === 'PendingReview'" class="text-yellow-600">
-              <i class="fa-solid fa-question-circle mr-1"></i> Agent nije siguran - čeka tvoj review
-            </span>
+          <div class="text-sm mt-2 font-medium">
+            
+            <div *ngIf="result.decision !== 'PendingReview' && result.label === 'Pollen'" class="text-green-700 bg-green-50 p-2 rounded border border-green-200">
+              <i class="fa-solid fa-check-circle mr-1"></i> 
+              Agent je siguran: <br> 
+              <span class="font-bold">IMA POLENA</span>
+            </div>
+
+            <div *ngIf="result.decision !== 'PendingReview' && result.label !== 'Pollen'" class="text-red-700 bg-red-50 p-2 rounded border border-red-200">
+              <i class="fa-solid fa-ban mr-1"></i> 
+              Agent je siguran: <br> 
+              <span class="font-bold">NEMA POLENA</span>
+            </div>
+
+            <div *ngIf="result.decision === 'PendingReview'" class="text-yellow-700 bg-yellow-50 p-2 rounded border border-yellow-200">
+              <i class="fa-solid fa-circle-question mr-1"></i> 
+              Agent nije siguran. <br>
+              <span class="text-xs">Potreban tvoj pregled.</span>
+            </div>
+
           </div>
-        </div>
+
+          <div class="mt-4 pt-3 border-t border-gray-100">
+            
+            <div *ngIf="!result.reviewedByUser && result.decision !== 'Reviewed'">
+              <p class="text-xs text-center text-gray-400 mb-2">Potvrdi ili ispravi agenta:</p>
+              
+              <div class="flex gap-2">
+                <button (click)="quickReview(result, true)" 
+                        class="flex-1 bg-green-50 hover:bg-green-100 text-green-700 text-xs font-bold py-2 px-2 rounded border border-green-200 transition">
+                  <i class="fa-solid fa-check mr-1"></i> Ima
+                </button>
+
+                <button (click)="quickReview(result, false)" 
+                        class="flex-1 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-bold py-2 px-2 rounded border border-red-200 transition">
+                  <i class="fa-solid fa-xmark mr-1"></i> Nema
+                </button>
+              </div>
+            </div>
+
+            <div *ngIf="result.reviewedByUser || result.decision === 'Reviewed'" 
+                 class="text-center py-2 bg-gray-50 rounded border border-gray-100">
+              <span class="text-xs font-bold text-gray-500">
+                <i class="fa-solid fa-user-check text-honey mr-1"></i> Tvoja odluka spremljena
+              </span>
+            </div>
+
+          </div>
+          </div>
       </div>
     </div>
 
-    <!-- Link na Training Studio ako ima nesigurnih -->
     <div *ngIf="hasPendingReviews" 
          class="bg-yellow-50 border-2 border-yellow-300 rounded-xl p-6 text-center">
       <i class="fa-solid fa-triangle-exclamation fa-2x text-yellow-500 mb-3"></i>
@@ -112,13 +147,11 @@
       </a>
     </div>
 
-    <!-- Dugme za clear -->
     <button (click)="clearResults()" class="text-gray-400 hover:text-gray-600 text-sm">
       <i class="fa-solid fa-times mr-1"></i> Očisti rezultate
     </button>
   </div>
 
-  <!-- STATISTIKA -->
   <div *ngIf="uploadStats" class="grid grid-cols-1 md:grid-cols-3 gap-6">
     
     <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 text-center">

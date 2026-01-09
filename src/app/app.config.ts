@@ -7,14 +7,14 @@ import { provideToastr } from 'ngx-toastr';
 
 export const appConfig: ApplicationConfig = {
   providers: [
-    provideZoneChangeDetection({ eventCoalescing: true }), 
+    provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
-    provideHttpClient(),       // Omogućava rad ApiService-a
-    provideAnimations(),       // Potrebno za Toastr
-    provideToastr({            // Konfiguracija notifikacija
+    provideHttpClient(),
+    provideAnimations(),
+    provideToastr({
       timeOut: 3000,
       positionClass: 'toast-bottom-right',
       preventDuplicates: true,
-    }) 
+    })
   ]
 };

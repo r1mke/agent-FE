@@ -10,6 +10,7 @@ interface AnalysisResult {
   score: number;
   label: string;
   decision: string;
+  reviewedByUser?: boolean;
 }
 
 @Component({
@@ -20,21 +21,21 @@ interface AnalysisResult {
   styleUrl: './dashboard.css',
 })
 export class Dashboard implements OnInit, OnDestroy {
-  
+
   isDragging = false;
   uploading = false;
-  
+
   uploadStats: {
     todayUploads: number;
     pendingReview: number;
     reviewed: number;
   } | null = null;
 
-  // Rezultati analize nakon uploada
+
   analysisResults: AnalysisResult[] = [];
   hasPendingReviews = false;
 
-  // Za polling
+
   private pendingIds: string[] = [];
   private pollingInterval: any;
 
@@ -62,8 +63,7 @@ export class Dashboard implements OnInit, OnDestroy {
     });
   }
 
-  // --- Drag & Drop Logika ---
-  
+
   onDragOver(event: DragEvent) {
     event.preventDefault();
     event.stopPropagation();
@@ -80,7 +80,7 @@ export class Dashboard implements OnInit, OnDestroy {
     event.preventDefault();
     event.stopPropagation();
     this.isDragging = false;
-    
+
     if (event.dataTransfer?.files.length) {
       this.handleFiles(event.dataTransfer.files);
     }
@@ -94,7 +94,7 @@ export class Dashboard implements OnInit, OnDestroy {
 
   handleFiles(files: FileList) {
     if (files.length === 0) return;
-    
+
     this.uploading = true;
     this.pendingIds = [];
     this.analysisResults = [];
@@ -104,14 +104,14 @@ export class Dashboard implements OnInit, OnDestroy {
       const file = files[i];
       this.api.upload(file, 1).subscribe({
         next: (response) => {
-          // Spremi ID za polling
+
           this.pendingIds.push(response.sampleId);
-          
+
           completed++;
           if (completed === files.length) {
             this.toastr.success(`Uploadovano ${files.length} slika - čekam analizu...`, 'Polenko');
             this.uploading = false;
-            
+
             // Pokreni polling za rezultate
             this.startPolling();
           }
@@ -124,22 +124,21 @@ export class Dashboard implements OnInit, OnDestroy {
     }
   }
 
-  // Polling - provjerava status uploadovanih slika
   startPolling() {
     let attempts = 0;
-    const maxAttempts = 30; // Max 30 sekundi čekanja
+    const maxAttempts = 30;
 
     this.pollingInterval = setInterval(() => {
       attempts++;
 
       this.api.getResultsByIds(this.pendingIds).subscribe({
         next: (results) => {
-          // Filtriraj samo one koje su završene (nisu Queued/Processing)
-          const finished = results.filter((r: any) => 
+
+          const finished = results.filter((r: any) =>
             r.status !== 0 && r.status !== 1 // 0=Queued, 1=Processing
           );
 
-          // Ažuriraj rezultate
+
           this.analysisResults = finished.map((r: any) => ({
             id: r.id,
             imageUrl: this.getImageUrl(r.imagePath),
@@ -148,14 +147,14 @@ export class Dashboard implements OnInit, OnDestroy {
             decision: r.predictions?.[0]?.decision || 'Unknown'
           }));
 
-          // Provjeri da li ima pending reviews
+
           this.hasPendingReviews = this.analysisResults.some(r => r.decision === 'PendingReview');
 
-          // Ako su sve završene, zaustavi polling
+
           if (finished.length === this.pendingIds.length) {
             this.stopPolling();
-            this.loadStats(); // Osvježi statistiku
-            
+            this.loadStats();
+
             if (this.hasPendingReviews) {
               this.toastr.warning('Neke slike trebaju tvoj review!', 'Pažnja');
             } else {
@@ -163,14 +162,14 @@ export class Dashboard implements OnInit, OnDestroy {
             }
           }
 
-          // Timeout zaštita
+
           if (attempts >= maxAttempts) {
             this.stopPolling();
             this.toastr.info('Analiza još traje u pozadini...', 'Info');
           }
         }
       });
-    }, 1000); // Provjeri svake sekunde
+    }, 1000);
   }
 
   stopPolling() {
@@ -189,5 +188,32 @@ export class Dashboard implements OnInit, OnDestroy {
     if (!fullPath) return 'assets/bee-placeholder.png';
     const filename = fullPath.split(/[\\/]/).pop();
     return `http://localhost:5036/images/${filename}`;
+  }
+
+
+  quickReview(result: AnalysisResult, isPollen: boolean) {
+
+    result.reviewedByUser = true;
+
+    this.api.reviewSample({
+      sampleId: result.id,
+      isPollen: isPollen
+    }).subscribe({
+      next: () => {
+
+        this.loadStats();
+
+        const text = isPollen ? "Potvrđeno: IMA POLENA" : "Potvrđeno: NEMA POLENA";
+        this.toastr.success(text, "Spremljeno");
+
+
+        result.label = isPollen ? 'Pollen' : 'NoPollen';
+        result.decision = 'Reviewed';
+      },
+      error: () => {
+        result.reviewedByUser = false;
+        this.toastr.error("Greška pri spremanju odluke.");
+      }
+    });
   }
 }

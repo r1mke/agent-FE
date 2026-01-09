@@ -6,8 +6,8 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        'honey': '#F59E0B',    // Amber-500
-        'dark-grey': '#1F2937' // Gray-800
+        'honey': '#F59E0B',
+        'dark-grey': '#1F2937'
       }
     },
   },

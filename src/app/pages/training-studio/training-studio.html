@@ -12,10 +12,9 @@
   </div>
 
   <div *ngIf="currentSample; else emptyState" class="bg-white p-2 rounded-2xl shadow-xl border-4 border-gray-100 relative">
-    
+
     <div class="absolute top-6 left-6 z-10">
       <div class="bg-dark-grey/90 text-white px-4 py-2 rounded-full shadow backdrop-blur-sm border border-gray-600">
-        <span class="text-xs text-gray-300 block uppercase">AI Misli:</span>
         <div class="font-bold text-lg flex items-center gap-2">
           <span [class.text-honey]="currentSample.prediction?.predictedLabel === 'Pollen'"
                 [class.text-gray-400]="currentSample.prediction?.predictedLabel === 'NoPollen'">
@@ -29,32 +28,29 @@
     </div>
 
     <div class="relative h-[500px] bg-black rounded-xl overflow-hidden group">
-      <img [src]="getImageUrl(currentSample?.imagePath || '')" 
+      <img [src]="getImageUrl(currentSample?.imagePath || '')"
      class="w-full h-full object-contain transition-transform duration-300 group-hover:scale-125 cursor-zoom-in">
-      
-      <div class="absolute bottom-4 left-0 right-0 text-white/50 text-sm">
-        Koristi strelice na tastaturi: ⬅️ NE &nbsp; | &nbsp; ➡️ DA
-      </div>
+
     </div>
 
     <div class="flex justify-center gap-8 mt-6 mb-4">
-      
-      <button (click)="submitReview(false)" 
+
+      <button (click)="submitReview(false)"
               class="group flex flex-col items-center gap-2 transition-transform active:scale-95">
         <div class="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center border-4 border-transparent group-hover:border-red-400 group-hover:bg-red-50 transition-colors">
           <i class="fa-solid fa-xmark fa-2x text-gray-400 group-hover:text-red-500"></i>
         </div>
         <span class="font-bold text-gray-500 group-hover:text-red-500">NEMA Polena</span>
-        <kbd class="text-xs bg-gray-200 px-2 rounded text-gray-500">⬅️ Lijevo</kbd>
+
       </button>
 
-      <button (click)="submitReview(true)" 
+      <button (click)="submitReview(true)"
               class="group flex flex-col items-center gap-2 transition-transform active:scale-95">
         <div class="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center border-4 border-transparent group-hover:border-green-400 group-hover:bg-green-50 transition-colors">
           <i class="fa-solid fa-check fa-2x text-gray-400 group-hover:text-green-500"></i>
         </div>
         <span class="font-bold text-gray-500 group-hover:text-green-500">IMA Polena</span>
-        <kbd class="text-xs bg-gray-200 px-2 rounded text-gray-500">Desno ➡️</kbd>
+        
       </button>
 
     </div>

@@ -52,7 +52,7 @@ export class AdminPanel implements OnInit {
 
   resetDatabase() {
     const code = prompt('OPREZ: Ovo briše SVE slike i podatke!\nUnesi "DELETE" da potvrdiš:');
-    
+
     if (code === 'DELETE') {
       this.api.resetDatabase().subscribe({
         next: (res) => {
@@ -66,7 +66,7 @@ export class AdminPanel implements OnInit {
     }
   }
 
-  // Pomoćna metoda za izračun postotka progress bara
+
   getTrainingProgress(): number {
     if (!this.status) return 0;
     const { newGoldSinceLastTrain, retrainThreshold } = this.status.training;

@@ -24,7 +24,7 @@ export interface ImageSample {
   imagePath: string;
   fileName?: string;
   predictions?: Prediction[];
-  prediction?: Prediction; // Za pending-review endpoint
+  prediction?: Prediction;
 }
 
 export interface ReviewRequest {
